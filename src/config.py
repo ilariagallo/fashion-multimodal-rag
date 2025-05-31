@@ -12,6 +12,7 @@ import vertexai
 # vertex_embeddings = VertexAIEmbeddings(model_name="multimodalembedding", project='fashion-multimodal-rag')
 
 DATA_DIR = "../data/"
+CHECKPOINTS_DIR = DATA_DIR + "checkpoints/checkpoints.sqlite"
 
 load_dotenv()
 

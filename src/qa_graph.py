@@ -1,3 +1,4 @@
+import sqlite3
 from typing import Annotated
 from pydantic import Field, BaseModel
 
@@ -6,13 +7,15 @@ from langchain_core.messages import AnyMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.messages import AIMessage
 from langchain_openai import ChatOpenAI
-from langgraph.checkpoint.memory import MemorySaver
+from langgraph.checkpoint.sqlite import SqliteSaver
 from typing_extensions import List, TypedDict
 from langgraph.graph import START, StateGraph, add_messages
 
+import config
+
 # The checkpointer lets the graph persist its state
-# this is a complete memory for the entire graph.
-memory = MemorySaver()
+conn = sqlite3.connect(config.CHECKPOINTS_DIR, check_same_thread=False)
+memory = SqliteSaver(conn)
 
 class State(TypedDict):
     question: str
