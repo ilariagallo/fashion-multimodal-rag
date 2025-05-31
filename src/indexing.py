@@ -31,12 +31,12 @@ class MultiModalIndex:
         :param id_field: name of the field in the csv file that contains the document ID
         :param metadata_fields: list of metadata fields to be added to each document (optional)
         """
-        items = pd.read_csv(file_name)
+        items = pd.read_csv(file_name, dtype=str)
 
         # Add items to the vector store
         docs = [Document(page_content=item[page_content_field],
                          metadata={m: item[m] for m in metadata_fields} if metadata_fields else {},
-                         id=int(item[id_field])) for _, item in items.iterrows()]
+                         id=item[id_field]) for _, item in items.iterrows()]
 
         _ = self.vector_store.add_documents(documents=docs)
 

@@ -1,4 +1,5 @@
 from typing import Annotated
+from pydantic import Field, BaseModel
 
 from langchain_core.documents import Document
 from langchain_core.messages import AnyMessage, HumanMessage
@@ -17,6 +18,7 @@ class State(TypedDict):
     question: str
     context: List[Document]
     messages: Annotated[list[AnyMessage], add_messages]
+    article_ids: list[str]
 
 
 class QAGraph:
@@ -26,10 +28,13 @@ class QAGraph:
     PROMPT = """You are a customer facing assistant tasked with outfit suggestions.
     You will be given descriptions of a number of clothing items that are available in stock. 
     Use this information to provide assistance with attire recommendations based on what's available in stock.
+    
     The user request might include an image of a clothing item. In that case, the attached image description will be
-    provided together with the user query. The output should include clarification questions (if the user's request 
-    is not clear) or relevant product recommendations based on the user's request. 
-
+    provided together with the user query. 
+    
+    The output should include clarification questions (if the user's request is not clear) or 
+    relevant product recommendations based on the user's request.
+    
     User-provided question:
     {question}
 
@@ -80,7 +85,7 @@ class QAGraph:
 
     def generate(self, state: State):
         """Generation step responsible for generating an answer to the question provided as input"""
-        docs_content = "\n\n".join(doc.page_content for doc in state["context"])
+        docs_content = self.format_documents(state["context"])
         prompt_template = ChatPromptTemplate.from_messages(
             [
                 (
@@ -90,6 +95,24 @@ class QAGraph:
                 ("placeholder", "{messages}"),
             ]
         ).partial(context=docs_content, question=state["messages"][-1].content)
-        assistant_runnable = prompt_template | self.LLM
+        assistant_runnable = prompt_template | self.LLM.with_structured_output(schema=FashionRecommenderOutput)
         response = assistant_runnable.invoke(state)
-        return {"messages": AIMessage(content=response.content)}
+        return {"messages": AIMessage(content=response.message), "article_ids": response.article_ids}
+
+    @staticmethod
+    def format_documents(documents: List[Document]) -> str:
+        """
+        Formats the retrieved documents into a string for prompting
+        """
+        return "\n\n".join(
+            f"Product_id: <{doc.id}>\n"
+            f"Product name: {doc.metadata.get('product_name')}\n"
+            f"Product type: {doc.metadata.get('product_type_name')}\n"
+            f"Description: {doc.page_content}"
+            for doc in documents
+        )
+
+
+class FashionRecommenderOutput(BaseModel):
+    message: str = Field(description="Response message from the assistant to the user")
+    article_ids: list[str] = Field(description="List of article IDs recommended by the assistant")
