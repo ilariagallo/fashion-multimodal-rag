@@ -191,7 +191,8 @@ class ChatApp:
 
         user_input, uploaded_image, submitted = self.get_user_input()
         if submitted:
-            self.process_user_message(user_input, uploaded_image)
+            with st.spinner("Thinking..."):
+                self.process_user_message(user_input, uploaded_image)
 
 
 # ---------------- Entry point ----------------

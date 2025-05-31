@@ -26,7 +26,7 @@ class State(TypedDict):
 
 class QAGraph:
     """
-    Retrieval-generation graph for question answering
+    Retrieval-generation graph for question answering with chat memory.
     """
     PROMPT = """You are a customer facing assistant tasked with outfit suggestions.
     You will be given descriptions of a number of clothing items that are available in stock. 
@@ -111,6 +111,7 @@ class QAGraph:
             f"Product_id: <{doc.id}>\n"
             f"Product name: {doc.metadata.get('product_name')}\n"
             f"Product type: {doc.metadata.get('product_type_name')}\n"
+            f"Product colour: {doc.metadata.get('colour_group_name')}\n"
             f"Description: {doc.page_content}"
             for doc in documents
         )
@@ -118,4 +119,9 @@ class QAGraph:
 
 class FashionRecommenderOutput(BaseModel):
     message: str = Field(description="Response message from the assistant to the user")
-    article_ids: list[str] = Field(description="List of article IDs recommended by the assistant")
+    article_ids: list[str] = Field(
+        default=[],
+        description="List of article IDs recommended by the assistant. "
+                    "Only populate this if the assistant is making product recommendations."
+                    "Otherwise, return empty list if the assistant is providing additional details about the products"
+                    "already recommended.")
