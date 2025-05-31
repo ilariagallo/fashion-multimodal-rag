@@ -159,10 +159,11 @@ class ChatApp:
         Returns:
             tuple: Assistant's textual response and list of article IDs referenced.
         """
-        messages = [HumanMessage(content=message_content)]
-        conf = {"configurable": {"thread_id": self.thread_id}}  # Unique thread ID
-        response = self.qa_graph.graph.invoke({"messages": messages}, conf)
-        return response['messages'][-1].content, response['article_ids']
+        with st.empty():
+            messages = [HumanMessage(content=message_content)]
+            conf = {"configurable": {"thread_id": self.thread_id}}  # Unique thread ID
+            response = self.qa_graph.graph.invoke({"messages": messages}, conf)
+            return response['messages'][-1].content, response['article_ids']
 
     def process_user_message(self, user_input, uploaded_image):
         """
