@@ -8,7 +8,7 @@ class MultiModalIndex:
     """Implements a multimodal index to store and retrieve document and image embeddings efficiently"""
 
     COLLECTION_NAME = "fashion_products"
-    DIRECTORY_NAME = "./chroma_langchain_db"
+    DIRECTORY_NAME = config.DATA_DIR + "chroma_langchain_db"
 
     def __init__(self, embeddings=None, vector_store=None):
         """
@@ -45,7 +45,7 @@ if __name__ == "__main__":
     index = MultiModalIndex(embeddings=config.open_ai_embeddings)
     # Add documents from file
     index.add_documents_from_file(
-        file_name="../data/articles_test.csv",
+        file_name=config.DATA_DIR + "articles_test.csv",
         page_content_field="detail_desc",
         id_field="article_id",
         metadata_fields=["prod_name", "product_type_name", "product_group_name"]

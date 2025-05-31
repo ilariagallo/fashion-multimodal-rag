@@ -11,6 +11,8 @@ import vertexai
 # vertexai.init(project=PROJECT_ID, location=LOCATION)
 # vertex_embeddings = VertexAIEmbeddings(model_name="multimodalembedding", project='fashion-multimodal-rag')
 
+DATA_DIR = "../data/"
+
 load_dotenv()
 
 open_ai_embeddings = AzureOpenAIEmbeddings(
