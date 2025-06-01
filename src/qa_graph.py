@@ -11,19 +11,24 @@ from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.sqlite import SqliteSaver
 from typing_extensions import List, TypedDict
 from langgraph.graph import START, StateGraph, add_messages
+from langsmith import utils
 
 import config
 from prompts import QA_PROMPT, GUARDRAIL_PROMPT, GUARDRAIL_SAFE_RESPONSE
 
-# The checkpointer lets the graph persist its state
-conn = sqlite3.connect(config.CHECKPOINTS_DIR, check_same_thread=False)
-memory = SqliteSaver(conn)
+# LangSmith utilities for tracing
+utils.tracing_is_enabled()
 
+# Define the state of the graph
 class State(TypedDict):
     question: str
     context: List[Document]
     messages: Annotated[list[AnyMessage], add_messages]
     article_ids: list[str]
+
+# The checkpointer lets the graph persist its state
+conn = sqlite3.connect(config.CHECKPOINTS_DIR, check_same_thread=False)
+memory = SqliteSaver(conn)
 
 
 class QAGraph:
