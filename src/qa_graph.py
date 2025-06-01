@@ -192,6 +192,7 @@ class FashionRecommenderOutput(BaseModel):
     article_ids: list[str] = Field(
         default=[],
         description="List of article IDs recommended by the assistant. "
-                    "Only populate this if the assistant is making product recommendations."
-                    "Otherwise, return empty list if the assistant is providing additional details about the products"
-                    "already recommended.")
+                    "Only populate this if the assistant is making product recommendations or if the user explicitly "
+                    "asks to see the product. Otherwise, return empty list if the assistant is providing additional "
+                    "details about the products already recommended. This is used to retrieve product images for "
+                    "display in the UI.")
