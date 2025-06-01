@@ -15,6 +15,9 @@ Clothing items available in stock:
 {context}
 """
 
+IMAGE_DESCRIPTION_PROMPT = """Describe the clothing item(s) in this image including the type of clothing, color 
+(with specific color names if possible), style, and any other relevant details."""
+
 GUARDRAIL_PROMPT = """Your role is to assess whether the user message is allowed or not.
 The conversation is about fashion and clothing recommendations. 
 The user may ask about clothing items, styles, or fashion advice. 

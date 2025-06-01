@@ -14,7 +14,8 @@ from langgraph.graph import START, StateGraph, add_messages
 from langsmith import utils
 
 import config
-from prompts import QA_PROMPT, GUARDRAIL_PROMPT, GUARDRAIL_SAFE_RESPONSE
+from prompts import *
+
 
 # LangSmith utilities for tracing
 utils.tracing_is_enabled()
@@ -60,7 +61,7 @@ class QAGraph:
                 "content": [
                     {
                         "type": "text",
-                        "text": "Describe the clothing item(s) in this image:",
+                        "text": IMAGE_DESCRIPTION_PROMPT,
                     },
                     image_element,
                 ],

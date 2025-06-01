@@ -59,7 +59,7 @@ if __name__ == "__main__":
     # Add documents from file
     index.add_documents_from_file(
         file_name=config.DATA_DIR + "articles.csv",
-        page_content_fields=["prod_name", "product_group_name", "colour_group_name", "detail_desc"],
+        page_content_fields=["prod_name", "product_type_name", "product_group_name", "colour_group_name", "detail_desc"],
         id_field="article_id",
         metadata_fields=["prod_name", "product_type_name", "product_group_name", "colour_group_name"]
     )
