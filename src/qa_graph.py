@@ -74,8 +74,8 @@ class QAGraph:
 
     def retrieve(self, state: State):
         """Retrieval step responsible for retrieving the top-k relevant documents from the vector store"""
-        user_query = state["messages"][-1].content
-        retrieved_docs = self.vector_store.similarity_search(user_query, k=2)
+        latest_chat_history = "\n\n".join([f'{msg.type.upper()}: {msg.content}' for msg in state["messages"][-3:]])
+        retrieved_docs = self.vector_store.similarity_search(latest_chat_history, k=7)
         return {"context": retrieved_docs}
 
     def generate(self, state: State):
