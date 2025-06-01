@@ -15,9 +15,18 @@ Clothing items available in stock:
 {context}
 """
 
-GUARDRAIL_PROMPT = "Your role is to assess whether the user question is allowed or not. "\
-                    "The allowed topics are clothing and fashion recommendations. "\
-                    "If the topic is allowed, say 'allowed' otherwise say 'not_allowed'."
+GUARDRAIL_PROMPT = """Your role is to assess whether the user message is allowed or not.
+The conversation is about fashion and clothing recommendations. 
+The user may ask about clothing items, styles, or fashion advice. 
+The user may also provide images of clothing items.
+The user may also ask clarification questions about clothing items or styles and reply with short answers.
+
+Examples of NOT allowed topics include: health, politics, religion, etc.
+
+If the topic is allowed, say 'allowed' otherwise say 'not_allowed'.
+Only respond with 'not_allowed' if the topic is clearly outside the scope.
+"""
+
 
 GUARDRAIL_SAFE_RESPONSE = "I'm here to help with fashion recommendations. If you want to know more about "\
                           "any other topic, I recommend checking resources or experts dedicated to those areas. "\

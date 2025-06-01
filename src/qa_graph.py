@@ -180,6 +180,9 @@ class QAGraph:
 
 
 class FashionRecommenderOutput(BaseModel):
+    """
+    Structured output model for the fashion recommender assistant's response.
+    """
     message: str = Field(description="Response message from the assistant to the user")
     article_ids: list[str] = Field(
         default=[],
