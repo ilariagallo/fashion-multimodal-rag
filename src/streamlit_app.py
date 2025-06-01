@@ -71,17 +71,16 @@ class ChatApp:
         return user_input, uploaded_image, submitted
 
     @staticmethod
-    def encode_uploaded_image(uploaded_image):
+    def encode_image_bytes(image_bytes):
         """
-        Encode an uploaded image file to a base64 string for processing.
-
+        Encode image bytes to a base64 string for transmission in the chat.
+        This is necessary for sending images in a format that can be easily handled by the model.
         Args:
-            uploaded_image (UploadedFile): Image file uploaded by user.
+            image_bytes (bytes) : The raw bytes of the image to be encoded.
 
         Returns:
-            dict: Encoded image content in expected format.
+            dict: A dictionary containing the encoded image data and metadata.
         """
-        image_bytes = uploaded_image.read()
         encoded_image = base64.b64encode(image_bytes).decode("utf-8")
         return {
             "type": "image",
@@ -110,8 +109,7 @@ class ChatApp:
         return image_paths
 
     @staticmethod
-    def append_user_message(user_input, uploaded_image):
-        image_bytes = uploaded_image.read() if uploaded_image else None
+    def append_user_message(user_input, image_bytes):
         st.session_state.messages.append({
             "role": "user",
             "text": user_input if user_input else None,
@@ -133,20 +131,20 @@ class ChatApp:
             "article_images": image_paths
         })
 
-    def build_message_content(self, user_input, uploaded_image):
+    def build_message_content(self, user_input, image_bytes):
         """
         Build a list of message content blocks (text and image) for the assistant.
 
         Args:
             user_input (str): The user's message.
-            uploaded_image (UploadedFile): An optional uploaded image.
+            image_bytes (bytes): Optional image bytes uploaded with the message.
 
         Returns:
             list: Formatted message content suitable for model input.
         """
         content = [{"type": "text", "text": user_input}]
-        if uploaded_image:
-            content.append(self.encode_uploaded_image(uploaded_image))
+        if image_bytes:
+            content.append(self.encode_image_bytes(image_bytes))
         return content
 
     def generate_bot_response(self, message_content):
@@ -173,9 +171,10 @@ class ChatApp:
             user_input (str): User's text input.
             uploaded_image (UploadedFile): Optional image uploaded with message.
         """
-        self.append_user_message(user_input, uploaded_image)
+        image_bytes = uploaded_image.read() if uploaded_image else None
+        self.append_user_message(user_input, image_bytes)
 
-        message_content = self.build_message_content(user_input, uploaded_image)
+        message_content = self.build_message_content(user_input, image_bytes)
         ai_message, article_ids = self.generate_bot_response(message_content)
         image_paths = self.get_article_image_paths(article_ids)
 
@@ -195,7 +194,6 @@ class ChatApp:
                 self.process_user_message(user_input, uploaded_image)
 
 
-# ---------------- Entry point ----------------
 if __name__ == "__main__":
     app = ChatApp()
     app.run()
