@@ -173,10 +173,9 @@ class ChatApp:
             user_input (str): User's text input.
             uploaded_image (UploadedFile): Optional image uploaded with message.
         """
-        message_content = self.build_message_content(user_input, uploaded_image)
-
         self.append_user_message(user_input, uploaded_image)
 
+        message_content = self.build_message_content(user_input, uploaded_image)
         ai_message, article_ids = self.generate_bot_response(message_content)
         image_paths = self.get_article_image_paths(article_ids)
 

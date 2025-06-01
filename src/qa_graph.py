@@ -1,3 +1,4 @@
+import asyncio
 import sqlite3
 from typing import Annotated
 from pydantic import Field, BaseModel
@@ -12,6 +13,7 @@ from typing_extensions import List, TypedDict
 from langgraph.graph import START, StateGraph, add_messages
 
 import config
+from prompts import QA_PROMPT, GUARDRAIL_PROMPT, GUARDRAIL_SAFE_RESPONSE
 
 # The checkpointer lets the graph persist its state
 conn = sqlite3.connect(config.CHECKPOINTS_DIR, check_same_thread=False)
@@ -26,23 +28,7 @@ class State(TypedDict):
 
 class QAGraph:
     """
-    Retrieval-generation graph for question answering with chat memory.
-    """
-    PROMPT = """You are a customer facing assistant tasked with outfit suggestions.
-    You will be given descriptions of a number of clothing items that are available in stock. 
-    Use this information to provide assistance with attire recommendations based on what's available in stock.
-    
-    The user request might include an image of a clothing item. In that case, the attached image description will be
-    provided together with the user query. 
-    
-    The output should include clarification questions (if the user's request is not clear) or 
-    relevant product recommendations based on the user's request.
-    
-    User-provided question:
-    {question}
-
-    Clothing items available in stock:
-    {context}
+    Retrieval-generation graph for question answering with chat memory and guardrails.
     """
     LLM = ChatOpenAI(model="gpt-4o")
 
@@ -89,23 +75,19 @@ class QAGraph:
     def generate(self, state: State):
         """Generation step responsible for generating an answer to the question provided as input"""
         docs_content = self.format_documents(state["context"])
-        prompt_template = ChatPromptTemplate.from_messages(
-            [
-                (
-                    "system",
-                    self.PROMPT,
-                ),
-                ("placeholder", "{messages}"),
-            ]
-        ).partial(context=docs_content, question=state["messages"][-1].content)
-        assistant_runnable = prompt_template | self.LLM.with_structured_output(schema=FashionRecommenderOutput)
-        response = assistant_runnable.invoke(state)
-        return {"messages": AIMessage(content=response.message), "article_ids": response.article_ids}
+        user_message = state["messages"][-1].content
+        response_message, articles_ids = asyncio.run(
+            self.execute_chat_with_guardrail_async(user_message, docs_content, state)
+        )
+        return {"messages": AIMessage(content=response_message), "article_ids": articles_ids}
 
     @staticmethod
     def format_documents(documents: List[Document]) -> str:
         """
         Formats the retrieved documents into a string for prompting
+
+        :param documents: List of Document objects retrieved from the vector store
+        :return: Formatted string with product details
         """
         return "\n\n".join(
             f"Product_id: <{doc.id}>\n"
@@ -115,6 +97,86 @@ class QAGraph:
             f"Description: {doc.page_content}"
             for doc in documents
         )
+
+
+    # ---- FUNCTIONALITY TO GENERATE CHAT RESPONSE WITH INPUT GUARDRAILS ---- #
+
+    async def execute_chat_with_guardrail_async(self, user_message, docs_content, state) -> str:
+        """ Asynchronously executes the chat with a topical guardrail to ensure the conversation stays on topic."""
+        return await self.execute_chat_with_guardrail(user_message, docs_content, state)
+
+    async def get_chat_response(self, user_request, context, state: State):
+        """
+        Generates a chat response using the LLM and the provided context.
+
+        :param user_request: The user's request message.
+        :param context: The context retrieved from the vector store.
+        :param state: The current state of the conversation.
+        :return: The chat response and the article IDs recommended by the assistant.
+        """
+        prompt_template = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    QA_PROMPT
+                ),
+                ("placeholder", "{messages}"),
+            ]
+        ).partial(context=context, question=user_request)
+        assistant_runnable = prompt_template | self.LLM.with_structured_output(schema=FashionRecommenderOutput)
+        response = assistant_runnable.invoke(state)
+        return response.message, response.article_ids
+
+    async def topical_guardrail(self, user_request):
+        """
+        Checks if the user request is within the allowed topics using a topical guardrail.
+        If the topic is allowed, it returns 'allowed', otherwise it returns 'not_allowed'.
+
+        :param user_request: The user's request message.
+        :return: 'allowed' or 'not_allowed' based on the topic of the user request.
+        """
+        messages = [
+            {
+                "role": "system",
+                "content": GUARDRAIL_PROMPT,
+            },
+            {"role": "user", "content": user_request},
+        ]
+        response = self.LLM.invoke(messages)
+        return response.content
+
+    async def execute_chat_with_guardrail(self, user_request, context, state: State):
+        """
+        Executes the chat with a topical guardrail to ensure the conversation stays on topic.
+        If the guardrail is triggered, it returns a predefined response.
+
+        :param user_request: The user's request message.
+        :param context: The context retrieved from the vector store.
+        :param state: The current state of the conversation.
+        :return: The chat response or a guardrail-triggered response.
+        """
+        topical_guardrail_task = asyncio.create_task(self.topical_guardrail(user_request))
+        chat_task = asyncio.create_task(self.get_chat_response(user_request, context, state))
+
+        while True:
+            done, _ = await asyncio.wait(
+                [topical_guardrail_task, chat_task], return_when=asyncio.FIRST_COMPLETED
+            )
+            if topical_guardrail_task in done:
+                guardrail_response = topical_guardrail_task.result()
+
+                # Topical guardrail triggered
+                if guardrail_response == "not_allowed":
+                    chat_task.cancel()
+                    response_message = GUARDRAIL_SAFE_RESPONSE
+                    return response_message, _
+
+                # Topical guardrail passed
+                elif chat_task in done:
+                    chat_response = chat_task.result()
+                    return chat_response
+            else:
+                await asyncio.sleep(0.1)  # sleep for a bit before checking the tasks again
 
 
 class FashionRecommenderOutput(BaseModel):
