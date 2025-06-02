@@ -1,18 +1,19 @@
 import os
 
 from dotenv import load_dotenv
-from langchain_openai import AzureOpenAIEmbeddings
+from langchain_openai import AzureOpenAIEmbeddings, AzureChatOpenAI
 
 DATA_DIR = "../data/"
 CHECKPOINTS_DIR = DATA_DIR + "checkpoints/checkpoints.sqlite"
 
 load_dotenv()
 
-open_ai_embeddings = AzureOpenAIEmbeddings(
-    azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
-    azure_deployment=os.environ["AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME"],
-    openai_api_version=os.environ["AZURE_OPENAI_API_VERSION"],
-)
+open_ai_embeddings = AzureOpenAIEmbeddings(model=os.environ["AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME"])
+
+chat = AzureChatOpenAI(
+        azure_deployment=os.environ["AZURE_OPENAI_CHAT_DEPLOYMENT_NAME"],
+        api_version=os.environ["AZURE_OPENAI_API_VERSION"],
+    )
 
 
 # Multi-modal open source embeddings. This requires the OpenCLIP model to be downloaded.

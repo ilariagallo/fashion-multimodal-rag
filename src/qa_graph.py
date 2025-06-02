@@ -7,13 +7,12 @@ from langchain_core.documents import Document
 from langchain_core.messages import AnyMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.messages import AIMessage
-from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.sqlite import SqliteSaver
 from typing_extensions import List, TypedDict
 from langgraph.graph import START, StateGraph, add_messages
 from langsmith import utils
 
-import config
+from config import *
 from prompts import *
 
 
@@ -28,7 +27,7 @@ class State(TypedDict):
     article_ids: list[str]
 
 # The checkpointer lets the graph persist its state
-conn = sqlite3.connect(config.CHECKPOINTS_DIR, check_same_thread=False)
+conn = sqlite3.connect(CHECKPOINTS_DIR, check_same_thread=False)
 memory = SqliteSaver(conn)
 
 
@@ -36,8 +35,6 @@ class QAGraph:
     """
     Retrieval-generation graph for question answering with chat memory and guardrails.
     """
-    LLM = ChatOpenAI(model="gpt-4o")
-
     def __init__(self, vector_store):
         graph = StateGraph(State).add_sequence([self.decode_message, self.retrieve, self.generate])
         graph.add_edge(START, "decode_message")
@@ -66,7 +63,7 @@ class QAGraph:
                     image_element,
                 ],
             }
-            image_description = self.LLM.invoke([message])
+            image_description = chat.invoke([message])
             decoded_message += f"\n\nAttached image description: {image_description.content}"
 
 
@@ -129,7 +126,7 @@ class QAGraph:
                 ("placeholder", "{messages}"),
             ]
         ).partial(context=context, question=user_request)
-        assistant_runnable = prompt_template | self.LLM.with_structured_output(schema=FashionRecommenderOutput)
+        assistant_runnable = prompt_template | chat.with_structured_output(schema=FashionRecommenderOutput)
         response = assistant_runnable.invoke(state)
         return response.message, response.article_ids
 
@@ -148,7 +145,7 @@ class QAGraph:
             },
             {"role": "user", "content": user_request},
         ]
-        response = self.LLM.invoke(messages)
+        response = chat.invoke(messages)
         return response.content
 
     async def execute_chat_with_guardrail(self, user_request, context, state: State):
