@@ -124,12 +124,38 @@ pip install -r requirements.txt
 
 **Step 1: Build the Vector Store**
 ```
-python index.py
+cd src
+python indexing.py
 ```
 
 **Step 2: Run the Streamlit app**
 ```
-cd src
 streamlit run streamlit_app.py 
 ```
 
+## 📸 Example 
+**User:** Do you have the Howie shorts in stock in blue? 
+
+**Assistant:** We do not have the Howie Shorts specifically available in blue, but we do have them in other colors, 
+like Dark Turquoise. Would you like me to recommend alternative options in blue from different styles of shorts?
+<Howie Shorts in Dark Turquoise (Product ID: 0523404024)>
+
+<figure>
+  <p align="center">
+    <img src="data/attachments/example.png">
+  </p>
+  <p align="center">Figure 2: Example</p>
+</figure>
+
+## 📚 Resources
+- [Build a Retrieval Augmented Generation (RAG) App with LangGraph](https://python.langchain.com/docs/tutorials/rag/)
+- [Chroma Integration with LangChain](https://python.langchain.com/docs/integrations/vectorstores/chroma/)
+- [Multimodal Embeddings with OpenAI's CLIP](https://python.langchain.com/docs/integrations/text_embedding/open_clip/)
+- [Guardrails Cookbook](https://cookbook.openai.com/examples/how_to_use_guardrails)
+- [LangSmith Documentation](https://docs.smith.langchain.com/)
+- [Streamlit Documentation](https://docs.streamlit.io/)
+
+## 📈 Future Work
+- **Multimodal Embeddings**: Implement image embeddings using OpenAI's CLIP for better image-text matching.
+- **User Personalization**: Enhance recommendations with user-specific preferences and metadata (e.g. size, style).
+- **Advanced Evaluation**: Expand datasets and evaluation metrics for more comprehensive performance analysis.

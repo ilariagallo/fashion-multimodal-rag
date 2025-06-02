@@ -64,7 +64,7 @@ class QAGraph:
                 ],
             }
             image_description = chat.invoke([message])
-            decoded_message += f"\n\nAttached image description: {image_description.content}"
+            decoded_message += f"\n\nAI generated image description: {image_description.content}"
 
 
         return {"messages": HumanMessage(content=decoded_message)}
